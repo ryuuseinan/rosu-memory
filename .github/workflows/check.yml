@@ -45,5 +45,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: rosu-memory-${{ matrix.target }}.exe
-          path: target/release/rosu-memory.exe
+          path: |
+            target/release/rosu-memory.exe
+            examples/
           retention-days: 5
