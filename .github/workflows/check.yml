@@ -38,7 +38,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: rosu-memory-${{ matrix.target }}
-          path: target/release/rosu-memory
+          path: |
+            target/release/rosu-memory
+            examples/
           retention-days: 5
       - name: Upload artifacts windows 
         if: "matrix.target == 'x86_64-pc-windows-msvc'"
