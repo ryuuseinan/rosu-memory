@@ -234,10 +234,10 @@ pub fn process_reading_loop(p: &Process, state: &mut State) -> Result<()> {
         let plays_addr = p.read_i32(state.addresses.base - 0x33)? + 0xC;
         values.plays = p.read_i32(plays_addr)?;
 
-        values.beatmap.artist = p.read_string_with_limit_from_ptr(beatmap_addr + 0x18, 100)?;
+        values.beatmap.artist = p.read_string_with_limit_from_ptr(beatmap_addr + 0x18, 150)?;
         values.beatmap.title = p.read_string_with_limit_from_ptr(beatmap_addr + 0x24, 150)?;
-        values.beatmap.creator = p.read_string_with_limit_from_ptr(beatmap_addr + 0x7C, 30)?;
-        values.beatmap.difficulty = p.read_string_with_limit_from_ptr(beatmap_addr + 0xAC, 30)?;
+        values.beatmap.creator = p.read_string_with_limit_from_ptr(beatmap_addr + 0x7C, 100)?;
+        values.beatmap.difficulty = p.read_string_with_limit_from_ptr(beatmap_addr + 0xAC, 150)?;
         values.beatmap.map_id = p.read_i32(beatmap_addr + 0xC8)?; // TODO batch
         values.beatmap.mapset_id = p.read_i32(beatmap_addr + 0xCC)?; // TODO batch
     }
@@ -358,7 +358,7 @@ pub fn process_reading_loop(p: &Process, state: &mut State) -> Result<()> {
         let result_base = p.read_i32(ruleset_addr + 0x38)?;
 
         values.result_screen.username =
-            p.read_string_with_limit_from_ptr(result_base + 0x28, 30)?;
+            p.read_string_with_limit_from_ptr(result_base + 0x28, 100)?;
 
         let mods_xor_base = p.read_i32(result_base + 0x1C)?;
 
