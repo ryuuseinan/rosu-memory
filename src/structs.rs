@@ -184,6 +184,7 @@ pub struct StaticAddresses {
     pub skin: i32,
     pub chat_checker: i32,
     pub audio_time_base: i32,
+    pub ingame_ui: i32,
 }
 
 impl StaticAddresses {
@@ -204,6 +205,7 @@ impl StaticAddresses {
         let chat_checker = Signature::from_str("0A D7 23 3C 00 00 ?? 01")?;
 
         let audio_time_base = Signature::from_str("DB 5C 24 34 8B 44 24 34")?;
+        let ingame_ui = Signature::from_str("83 E0 20 85 C0 7E 2F")?;
 
         Ok(Self {
             base: p.read_signature(&base_sign)?,
@@ -214,6 +216,7 @@ impl StaticAddresses {
             skin: p.read_signature(&skin_sign)?,
             chat_checker: p.read_signature(&chat_checker)?,
             audio_time_base: p.read_signature(&audio_time_base)?,
+            ingame_ui: p.read_signature(&ingame_ui)?,
         })
     }
 }
@@ -661,6 +664,7 @@ pub struct OutputValues {
     /// Position of current playing audio in milliseconds
     /// (to be honest it have nothing to do with precision)
     pub precise_audio_time: i32,
+    pub show_interface: bool,
 }
 
 impl OutputValues {
@@ -687,6 +691,7 @@ impl OutputValues {
         self.prev_passed_objects = 0;
         self.delta_sum = 0;
         self.kiai_now = false;
+        self.show_interface = false;
 
         self.gameplay.slider_breaks = 0;
         self.gameplay.score = 0;

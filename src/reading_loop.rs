@@ -270,6 +270,17 @@ pub fn process_reading_loop(p: &Process, state: &mut State) -> Result<()> {
     values.skin_folder = values.osu_path.join("Skin").join(&skin_name);
     values.skin = skin_name;
 
+    // Read show interface flag from ingame_ui if available
+    if state.addresses.ingame_ui != 0 {
+        let inner_ptr = p.read_i32(state.addresses.ingame_ui + 0x8).unwrap_or(0);
+        if inner_ptr != 0 {
+            let addr = p.read_i32(inner_ptr + 0x4).unwrap_or(0);
+            if addr != 0 {
+                values.show_interface = p.read_i8(addr + 0xC)? != 0;
+            }
+        }
+    }
+
     if values.state != GameState::PreSongSelect
         && values.state != GameState::MultiplayerLobby
         && values.state != GameState::MultiplayerResultScreen
