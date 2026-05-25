@@ -162,6 +162,14 @@ pub fn process_gameplay(
     values.gameplay.mods = (mods_xor1 ^ mods_xor2) as u32;
     values.update_readable_mods();
 
+    let speed_factor = if values.gameplay.mods & 64 > 0 {
+        1.5
+    } else if values.gameplay.mods & 256 > 0 {
+        0.75
+    } else {
+        1.0
+    };
+
     // Calculate pp
     values.update_current_pp(&mut state.ivalues);
     values.update_fc_pp(&mut state.ivalues);
@@ -171,6 +179,10 @@ pub fn process_gameplay(
 
     values.gameplay.grade = values.gameplay.get_current_grade();
     values.update_current_bpm();
+    if speed_factor != 1.0 {
+        values.current_bpm *= speed_factor;
+        values.gameplay.unstable_rate /= speed_factor;
+    }
     values.update_kiai();
 
     Ok(())
@@ -235,7 +247,7 @@ pub fn process_reading_loop(p: &Process, state: &mut State) -> Result<()> {
         values.plays = p.read_i32(plays_addr)?;
 
         values.beatmap.artist = p.read_string_with_limit_from_ptr(beatmap_addr + 0x18, 200)?;
-        values.beatmap.title = p.read_string_with_limit_from_ptr(beatmap_addr + 0x24, 150)?;
+        values.beatmap.title = p.read_string_with_limit_from_ptr(beatmap_addr + 0x24, 200)?;
         values.beatmap.creator = p.read_string_with_limit_from_ptr(beatmap_addr + 0x7C, 100)?;
         values.beatmap.difficulty = p.read_string_with_limit_from_ptr(beatmap_addr + 0xAC, 150)?;
         values.beatmap.map_id = p.read_i32(beatmap_addr + 0xC8)?; // TODO batch
