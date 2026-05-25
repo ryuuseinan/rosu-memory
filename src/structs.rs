@@ -928,47 +928,46 @@ impl OutputValues {
     /// Depends on `GameplayValues`
     pub fn adjust_bpm(&mut self) {
         let _span = tracy_client::span!("adjust bpm");
+        // Recompute baseline values to avoid accumulating multiplications
+        // Ensure min/max and current bpm are up-to-date
+        self.update_min_max_bpm();
+        self.update_current_bpm();
+
+        let base_bpm = if let Some(beatmap) = &self.current_beatmap {
+            beatmap.bpm()
+        } else {
+            self.beatmap.bpm
+        };
+
+        let base_max = self.beatmap.max_bpm;
+        let base_min = self.beatmap.min_bpm;
+        let base_current = self.current_bpm;
+
+        let mut factor = 1.0_f64;
+
         match self.state {
             GameState::Playing => {
                 if self.gameplay.mods & 64 > 0 {
-                    self.gameplay.unstable_rate /= 1.5;
-                    self.current_bpm *= 1.5;
-                    self.beatmap.bpm *= 1.5;
-                    self.beatmap.max_bpm *= 1.5;
-                    self.beatmap.min_bpm *= 1.5;
+                    factor = 1.5;
                 } else if self.gameplay.mods & 256 > 0 {
-                    self.gameplay.unstable_rate *= 0.75;
-                    self.current_bpm *= 0.75;
-                    self.beatmap.bpm *= 0.75;
-                    self.beatmap.max_bpm *= 0.75;
-                    self.beatmap.min_bpm *= 0.75;
-                } else {
-                    self.update_min_max_bpm();
-
-                    if let Some(beatmap) = &self.current_beatmap {
-                        self.beatmap.bpm = beatmap.bpm();
-                    }
+                    factor = 0.75;
                 }
             }
             GameState::SongSelect => {
                 if self.menu_mods & 64 > 0 {
-                    self.beatmap.bpm *= 1.5;
-                    self.beatmap.max_bpm *= 1.5;
-                    self.beatmap.min_bpm *= 1.5;
+                    factor = 1.5;
                 } else if self.menu_mods & 256 > 0 {
-                    self.beatmap.bpm *= 0.75;
-                    self.beatmap.max_bpm *= 0.75;
-                    self.beatmap.min_bpm *= 0.75;
-                } else {
-                    self.update_min_max_bpm();
-
-                    if let Some(beatmap) = &self.current_beatmap {
-                        self.beatmap.bpm = beatmap.bpm();
-                    }
+                    factor = 0.75;
                 }
             }
             _ => (),
         }
+
+        // Apply factor to derived values using baselines (no in-place accumulation)
+        self.current_bpm = base_current * factor;
+        self.beatmap.bpm = base_bpm * factor;
+        self.beatmap.max_bpm = base_max * factor;
+        self.beatmap.min_bpm = base_min * factor;
     }
 
     /// Returns mods depending on current game state
