@@ -1002,8 +1002,13 @@ impl OutputValues {
                 }
             };
 
-            // Just to be sure
-            assert_eq!(beatmap.mode, mode);
+            // Use beatmap's actual mode instead of menu mode to avoid mismatches
+            // The beatmap mode is the source of truth
+            let target_mode = if beatmap.mode == mode {
+                mode
+            } else {
+                beatmap.mode
+            };
 
             self.stars = Difficulty::new()
                 .lazer(false)
