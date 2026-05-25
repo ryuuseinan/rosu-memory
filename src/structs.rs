@@ -993,7 +993,7 @@ impl OutputValues {
                 }
             };
 
-            let mode = {
+            let _mode = {
                 match self.state {
                     GameState::Playing => self.gameplay.gamemode(),
                     GameState::SongSelect => self.menu_gamemode(),
@@ -1004,11 +1004,6 @@ impl OutputValues {
 
             // Use beatmap's actual mode instead of menu mode to avoid mismatches
             // The beatmap mode is the source of truth
-            let target_mode = if beatmap.mode == mode {
-                mode
-            } else {
-                beatmap.mode
-            };
 
             self.stars = Difficulty::new()
                 .lazer(false)
