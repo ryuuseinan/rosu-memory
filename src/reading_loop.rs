@@ -344,8 +344,15 @@ pub fn process_reading_loop(p: &Process, state: &mut State) -> Result<()> {
     // everytime it's used for pp calc
     if new_map {
         if let Some(map) = values.current_beatmap.take() {
-            let converted = map.convert(values.menu_gamemode(), &GameMods::default());
+            // Use the beatmap's actual mode, not the menu mode
+            let beatmap_mode = map.mode;
+            let converted = map.convert(beatmap_mode, &GameMods::default());
             values.current_beatmap = Some(converted?);
+            
+            // Update menu_mode to match the beatmap if they differ
+            if (beatmap_mode as i32) != values.menu_mode {
+                values.menu_mode = beatmap_mode as i32;
+            }
         }
 
         values.update_stars_and_ss_pp();
