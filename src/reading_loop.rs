@@ -229,19 +229,96 @@ pub fn process_reading_loop(p: &Process, state: &mut State) -> Result<()> {
             &mut beatmap_stats_buff,
         )?;
 
-        // Safety: `buff` is already initialized
-        // and filled with zeros, the worst case scenario is
-        // ar, cs, od, hp going to be zero's
-        unsafe {
-            values.beatmap.ar =
-                f32::from_le_bytes(beatmap_stats_buff[0..4].try_into().unwrap_unchecked());
-            values.beatmap.cs =
-                f32::from_le_bytes(beatmap_stats_buff[4..8].try_into().unwrap_unchecked());
-            values.beatmap.hp =
-                f32::from_le_bytes(beatmap_stats_buff[8..12].try_into().unwrap_unchecked());
-            values.beatmap.od =
-                f32::from_le_bytes(beatmap_stats_buff[12..].try_into().unwrap_unchecked());
-        }
+            // Safety: `buff` is already initialized
+            // and filled with zeros, the worst case scenario is
+            // ar, cs, od, hp going to be zero's
+            unsafe {
+                values.beatmap.ar =
+                    f32::from_le_bytes(beatmap_stats_buff[0..4].try_into().unwrap_unchecked());
+                values.beatmap.cs =
+                    f32::from_le_bytes(beatmap_stats_buff[4..8].try_into().unwrap_unchecked());
+                values.beatmap.hp =
+                    f32::from_le_bytes(beatmap_stats_buff[8..12].try_into().unwrap_unchecked());
+                values.beatmap.od =
+                    f32::from_le_bytes(beatmap_stats_buff[12..].try_into().unwrap_unchecked());
+            }
+
+            // Apply mod conversions to AR, CS, HP, OD
+            let mods = values.gameplay.mods;
+            let mut ar = values.beatmap.ar;
+            let mut cs = values.beatmap.cs;
+            let mut hp = values.beatmap.hp;
+            let mut od = values.beatmap.od;
+
+            // Easy mod (EZ) halves stats
+            if mods & 0b10 != 0 { // EZ flag is bit 1 (value 2)
+                ar *= 0.5;
+                cs *= 0.5;
+                hp *= 0.5;
+                od *= 0.5;
+            }
+
+            // Hard Rock mod (HR) increases stats
+            if mods & 0b1_0000 != 0 { // HR flag is bit 4 (value 16)
+                ar *= 1.4;
+                cs *= 1.3;
+                hp *= 1.4;
+                od *= 1.4;
+                // Cap at 10 where appropriate
+                ar = ar.min(10.0);
+                cs = cs.min(10.0);
+                hp = hp.min(10.0);
+                od = od.min(10.0);
+            }
+
+            // Speed factor for DT/NC (1.5) or HT (0.75)
+            let speed_factor: f32 = if mods & 0b0100_0000 != 0 { // DT flag bit 6 (value 64)
+                1.5
+            } else if mods & 0b1_0000_0000 != 0 { // HT flag bit 8 (value 256)
+                0.75
+            } else {
+                1.0
+            };
+
+            // Helper to convert AR based on speed factor
+            fn convert_ar(ar: f32, speed: f32) -> f32 {
+                let ar_ms = if ar < 5.0 {
+                    1800.0 - 120.0 * ar
+                } else {
+                    1200.0 - 150.0 * (ar - 5.0)
+                };
+                let ar_ms = ar_ms / speed;
+                if ar_ms > 1200.0 {
+                    (1800.0 - ar_ms) / 120.0
+                } else {
+                    5.0 + (1200.0 - ar_ms) / 150.0
+                }
+            }
+
+            // Helper to convert OD based on speed factor
+            fn convert_od(od: f32, speed: f32) -> f32 {
+                let od_ms = if od < 5.0 {
+                    80.0 - 6.0 * od
+                } else {
+                    50.0 - 6.0 * (od - 5.0)
+                };
+                let od_ms = od_ms / speed;
+                if od_ms > 50.0 {
+                    (80.0 - od_ms) / 6.0
+                } else {
+                    5.0 + (50.0 - od_ms) / 6.0
+                }
+            }
+
+            // Apply speed conversion to AR and OD
+            ar = convert_ar(ar, speed_factor);
+            od = convert_od(od, speed_factor);
+
+            // Store converted values
+            values.beatmap.ar = format!("{:.1}", ar).parse::<f32>().unwrap_or(ar);
+            values.beatmap.cs = format!("{:.1}", cs).parse::<f32>().unwrap_or(cs);
+            values.beatmap.hp = format!("{:.1}", hp).parse::<f32>().unwrap_or(hp);
+            values.beatmap.od = format!("{:.1}", od).parse::<f32>().unwrap_or(od);
 
         let plays_addr = p.read_i32(state.addresses.base - 0x33)? + 0xC;
         values.plays = p.read_i32(plays_addr)?;
