@@ -76,7 +76,7 @@ fn main() -> Result<()> {
     std::thread::spawn(move || server_thread(server_clients, server_values));
 
     println!("Spawned server!");
-
+    
     if args.interval != Duration::from_millis(300) {
         println!("Using non default interval: {}", args.interval.as_millis());
     }
@@ -156,6 +156,8 @@ fn main() -> Result<()> {
         };
 
         println!("Starting reading loop");
+        println!(" - WebSocket endpoints: ws://127.0.0.1:24050/rws (rosu), ws://127.0.0.1:24050/ws (gosu)");
+        println!(" - HTTP file server: http://127.0.0.1:24050/Songs/<path-to-file>");
         'main_loop: loop {
             if let Err(e) = process_reading_loop(&p, &mut state) {
                 match e.downcast_ref::<ProcessError>() {
